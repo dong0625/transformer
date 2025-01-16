@@ -27,3 +27,5 @@ runs/
 *.pth
 *.lnk
 *.env
+
+test.py
