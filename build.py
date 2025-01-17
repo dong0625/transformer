@@ -14,7 +14,7 @@ def build_model(d_model, d_len, d_k, d_v, d_ff, d_voc, h, N, device):
     decoder_block = DecoderBlock(multi_head_attention, feed_forward, norm)
     encoder = Encoder(encoder_block, N)
     decoder = Decoder(decoder_block, N)
-    embedding = Embedding(d_model)
+    embedding = Embedding(d_len, d_model, d_voc)
     mask = torch.tril(torch.ones((d_len, d_len), dtype=torch.bool)).unsqueeze(0).to(device)
     transformer = Transformer(embedding,
                               encoder, decoder, d_model, d_voc, mask).to(device)

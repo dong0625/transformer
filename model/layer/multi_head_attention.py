@@ -24,7 +24,7 @@ class MultiHeadAttention(nn.Module):
 
         score = torch.matmul(Q, K.transpose(-2, -1)) / self.d_k**0.5
         if (mask != None):
-            mask = mask.unsqueeze(1).expand(-1, 8, -1, -1)
+            mask = mask.unsqueeze(1).expand(-1, self.h, -1, -1)
             score = score.masked_fill(mask == 0, -1e9)
         attention = score.softmax(dim=-1)
         out = torch.matmul(attention, V)

@@ -1,12 +1,13 @@
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer
 import torch
 import torch.nn as nn
+import math
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Tokenizer:
-    def __init__(self):
-        self.tokenizer = AutoTokenizer.from_pretrained('distilbert-base-multilingual-cased')
+    def __init__(self, model_name = 'distilbert-base-multilingual-cased'):
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     def tokenize(self, texts, length):
         inputs = self.tokenizer(texts, return_tensors="pt", padding="max_length", truncation=True, max_length=length)
@@ -21,13 +22,21 @@ class Tokenizer:
         return out
 
 class Embedding(nn.Module):
-    def __init__(self, d_model):
+    def __init__(self, d_len, d_model, d_voc):
         super().__init__()
-        self.model = AutoModel.from_pretrained('distilbert-base-multilingual-cased').to(DEVICE)
-        d_embed = self.model.config.hidden_size
-        self.linear = nn.Linear(d_embed, d_model)
+        self.embedding = nn.Embedding(d_voc, 512, 0)
+        self.linear = nn.Linear(512, d_model)
 
-    def forward(self, inputs):
-        outputs = self.model(**inputs).last_hidden_state
-        out = self.linear(outputs)
+        def val(pos, i):
+            res = pos / 10000**(2 * i / d_model)
+            if i & 1:
+                return math.cos(res)
+            else:
+                return math.sin(res)
+        self.position = torch.tensor([[val(pos, i) for i in range(d_model)] for pos in range(d_len)]).to(DEVICE)
+
+    def forward(self, tokens):
+        out = self.embedding(tokens)
+        out = self.linear(out)
+        out = out + self.position
         return out
